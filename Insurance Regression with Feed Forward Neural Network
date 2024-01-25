@@ -1,0 +1,483 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyNakhqm2K11rLjKKr0pSqfj",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/farhan-fk/ATS/blob/main/Insurance%20Regression%20with%20Feed%20Forward%20Neural%20Network\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 8,
+      "metadata": {
+        "id": "JZjCakzPG2I8"
+      },
+      "outputs": [],
+      "source": [
+        "import pandas as pd\n",
+        "\n",
+        "# Assuming the uploaded file is named 'your_file.csv'\n",
+        "df = pd.read_csv('insurance.csv')\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "print(df.head())"
+      ],
+      "metadata": {
+        "id": "-d7cAUEvIVfK"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "features=df.iloc[:,0:6]"
+      ],
+      "metadata": {
+        "id": "gntN4hSxI3hn"
+      },
+      "execution_count": 9,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "print(features.head())"
+      ],
+      "metadata": {
+        "id": "QjBmZoePJkyz"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "labels=df.iloc[:,-1]"
+      ],
+      "metadata": {
+        "id": "FhyxoTZxJtta"
+      },
+      "execution_count": 11,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "print(labels.head())"
+      ],
+      "metadata": {
+        "id": "1ew_drkBJ0Qh"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "print((\"Number of features: \", features.shape))"
+      ],
+      "metadata": {
+        "id": "VbOrPpx3J5AJ"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "print(labels.describe())"
+      ],
+      "metadata": {
+        "id": "N1V4C2mRLi41"
+      },
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "features  = pd.get_dummies(features)"
+      ],
+      "metadata": {
+        "id": "bsNIxGTsMUlY"
+      },
+      "execution_count": 12,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from sklearn.model_selection import train_test_split\n",
+        "features_train, features_test, labels_train, labels_test = train_test_split(features, labels, test_size=0.33, random_state=42)"
+      ],
+      "metadata": {
+        "id": "aUtDdW1tNpkZ"
+      },
+      "execution_count": 13,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from sklearn.compose import ColumnTransformer\n",
+        "from sklearn.preprocessing import StandardScaler\n",
+        "my_ct= ColumnTransformer([('scale', StandardScaler(), ['age', 'bmi', 'children'])], remainder='passthrough')\n",
+        "features_train_scale=my_ct.fit_transform(features_train)\n",
+        "features_test_scale=my_ct.transform(features_test)\n",
+        "features_train_scale = pd.DataFrame(features_train_scale, columns = features_train.columns)\n",
+        "features_test_scale= pd.DataFrame(features_test_scale, columns = features_train.columns)"
+      ],
+      "metadata": {
+        "id": "LqUtVvpURjQM"
+      },
+      "execution_count": 17,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "print(features_train_scale.shape[1])"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "LGvVxIwnjVAT",
+        "outputId": "a7c4fa33-280c-49fb-d771-8b45e0a3c000"
+      },
+      "execution_count": 18,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "11\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from tensorflow.keras.models import Sequential\n"
+      ],
+      "metadata": {
+        "id": "_jldvepxj0Be"
+      },
+      "execution_count": 19,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from tensorflow.keras import layers\n",
+        "import tensorflow as tf\n",
+        "from tensorflow.keras.layers import InputLayer\n",
+        "from tensorflow.keras.layers import Dense\n",
+        "from tensorflow.keras.optimizers import Adam\n",
+        "def design_model(features):\n",
+        "  model = Sequential(name = \"my_first_model\")\n",
+        "  input = InputLayer(input_shape=(features.shape[1],))\n",
+        "  #add the input layer\n",
+        "  model.add(input)\n",
+        "  #your code here\n",
+        "  model.add(Dense(128, activation = 'relu'))\n",
+        "  #adding an output layer to our model\n",
+        "  model.add(Dense(1))\n",
+        "  opt = Adam(learning_rate = 0.01)\n",
+        "  model.compile(loss='mse',  metrics=['mae'], optimizer=opt)\n",
+        "  return model"
+      ],
+      "metadata": {
+        "id": "alyiEUf4nyXY"
+      },
+      "execution_count": 20,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "#invoke the function for our model design\n",
+        "model = design_model(features_train_scale)\n",
+        "\n",
+        "#print the model summary here\n",
+        "print(model.summary())"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "PoDJ_wC4pxYU",
+        "outputId": "7b62dc81-621f-4207-ee19-d8a83b286a33"
+      },
+      "execution_count": 21,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Model: \"my_first_model\"\n",
+            "_________________________________________________________________\n",
+            " Layer (type)                Output Shape              Param #   \n",
+            "=================================================================\n",
+            " dense (Dense)               (None, 128)               1536      \n",
+            "                                                                 \n",
+            " dense_1 (Dense)             (None, 1)                 129       \n",
+            "                                                                 \n",
+            "=================================================================\n",
+            "Total params: 1665 (6.50 KB)\n",
+            "Trainable params: 1665 (6.50 KB)\n",
+            "Non-trainable params: 0 (0.00 Byte)\n",
+            "_________________________________________________________________\n",
+            "None\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "model.fit(features_train_scale, labels_train, epochs = 40, batch_size = 1, verbose = 1)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "FNCE8LmozfdB",
+        "outputId": "933f9929-690b-4208-b6d9-8e19b18f59d7"
+      },
+      "execution_count": 22,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Epoch 1/40\n",
+            "896/896 [==============================] - 2s 2ms/step - loss: 208530688.0000 - mae: 9634.9082\n",
+            "Epoch 2/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 92553624.0000 - mae: 7005.9287\n",
+            "Epoch 3/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 54244440.0000 - mae: 5261.7529\n",
+            "Epoch 4/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 40592120.0000 - mae: 4554.3501\n",
+            "Epoch 5/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 37580584.0000 - mae: 4244.7886\n",
+            "Epoch 6/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 36728440.0000 - mae: 4137.6240\n",
+            "Epoch 7/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 36317004.0000 - mae: 4133.6143\n",
+            "Epoch 8/40\n",
+            "896/896 [==============================] - 2s 2ms/step - loss: 35700008.0000 - mae: 4028.5408\n",
+            "Epoch 9/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 35199544.0000 - mae: 3951.8894\n",
+            "Epoch 10/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 34436964.0000 - mae: 3936.1208\n",
+            "Epoch 11/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 33755256.0000 - mae: 3841.5369\n",
+            "Epoch 12/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 32987966.0000 - mae: 3716.6155\n",
+            "Epoch 13/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 32262588.0000 - mae: 3679.8318\n",
+            "Epoch 14/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 31332012.0000 - mae: 3576.7693\n",
+            "Epoch 15/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 30807572.0000 - mae: 3566.1685\n",
+            "Epoch 16/40\n",
+            "896/896 [==============================] - 2s 2ms/step - loss: 30184170.0000 - mae: 3476.9067\n",
+            "Epoch 17/40\n",
+            "896/896 [==============================] - 2s 2ms/step - loss: 29404954.0000 - mae: 3432.8621\n",
+            "Epoch 18/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 28830490.0000 - mae: 3359.5500\n",
+            "Epoch 19/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 28282222.0000 - mae: 3267.6484\n",
+            "Epoch 20/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 27781034.0000 - mae: 3243.1941\n",
+            "Epoch 21/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 27243868.0000 - mae: 3206.2437\n",
+            "Epoch 22/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 26721546.0000 - mae: 3179.5605\n",
+            "Epoch 23/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 26624956.0000 - mae: 3157.3628\n",
+            "Epoch 24/40\n",
+            "896/896 [==============================] - 2s 2ms/step - loss: 26154418.0000 - mae: 3167.2227\n",
+            "Epoch 25/40\n",
+            "896/896 [==============================] - 2s 2ms/step - loss: 25998570.0000 - mae: 3078.1267\n",
+            "Epoch 26/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 25630266.0000 - mae: 3030.3633\n",
+            "Epoch 27/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 25413358.0000 - mae: 3050.1414\n",
+            "Epoch 28/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 25213588.0000 - mae: 3042.3262\n",
+            "Epoch 29/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 25084150.0000 - mae: 2990.7703\n",
+            "Epoch 30/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 24939698.0000 - mae: 3018.9333\n",
+            "Epoch 31/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 24810950.0000 - mae: 3021.1003\n",
+            "Epoch 32/40\n",
+            "896/896 [==============================] - 2s 2ms/step - loss: 24696080.0000 - mae: 3004.5454\n",
+            "Epoch 33/40\n",
+            "896/896 [==============================] - 2s 2ms/step - loss: 24534278.0000 - mae: 2980.3201\n",
+            "Epoch 34/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 24495904.0000 - mae: 2947.0706\n",
+            "Epoch 35/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 24334228.0000 - mae: 2889.0818\n",
+            "Epoch 36/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 24383974.0000 - mae: 3023.8442\n",
+            "Epoch 37/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 24266484.0000 - mae: 2939.4243\n",
+            "Epoch 38/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 24153662.0000 - mae: 3003.2190\n",
+            "Epoch 39/40\n",
+            "896/896 [==============================] - 1s 2ms/step - loss: 24189470.0000 - mae: 2891.8594\n",
+            "Epoch 40/40\n",
+            "896/896 [==============================] - 2s 2ms/step - loss: 24095402.0000 - mae: 3013.4070\n"
+          ]
+        },
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "<keras.src.callbacks.History at 0x7940d270fc70>"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 22
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "#evaluate the model on the test data\n",
+        "val_mse, val_mae = model.evaluate(features_test_scale, labels_test, verbose = 0)\n",
+        "print(\"MAE: \", val_mae)"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "VMvAvZ458pZ6",
+        "outputId": "72e5b9e3-ceff-46b0-ca0a-2c94d754661c"
+      },
+      "execution_count": 24,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "MAE:  2459.0185546875\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Assuming 'new_data' is your new dataset (similar structure to the training data)\n",
+        "new_data = pd.DataFrame({\n",
+        "    'age': [19, 56, 40],\n",
+        "    'sex': ['male', 'female', 'female'],\n",
+        "    'bmi': [24.6, 40.3, 30.1],\n",
+        "    'children': [1, 0, 2],\n",
+        "    'smoker': ['no', 'no', 'yes'],\n",
+        "    'region': ['southwest', 'southwest', 'southeast']\n",
+        "})\n",
+        "\n",
+        "# Apply one-hot encoding for 'region'\n",
+        "new_data_encoded = pd.get_dummies(new_data, columns=['region'], drop_first=True)\n",
+        "\n",
+        "# Ensure that all the necessary columns are present, add them if not\n",
+        "missing_columns = set(features_train.columns) - set(new_data_encoded.columns)\n",
+        "for col in missing_columns:\n",
+        "    new_data_encoded[col] = 0\n",
+        "\n",
+        "# Reorder columns to match the order during training\n",
+        "new_data_encoded = new_data_encoded[features_train.columns]\n",
+        "\n",
+        "# One-hot encode categorical variables and standardize numeric features\n",
+        "new_data_preprocessed = my_ct.transform(new_data_encoded)\n",
+        "\n",
+        "# Make predictions\n",
+        "new_data_predictions = model.predict(new_data_preprocessed)\n",
+        "\n",
+        "# Display the predictions\n",
+        "print(\"New Data Predictions:\")\n",
+        "print(new_data_predictions.flatten())\n",
+        "\n",
+        "\n"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "eNfhbx3Z-7RB",
+        "outputId": "89db36e6-c2f8-4255-8f76-11f07af151ff"
+      },
+      "execution_count": 38,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "1/1 [==============================] - 0s 19ms/step\n",
+            "New Data Predictions:\n",
+            "[ 2376.4866 28675.863   6483.437 ]\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 408
+        },
+        "id": "ZetzIbl0_Lue",
+        "outputId": "fa46485e-62e0-44c3-a64a-36f26742d61d"
+      },
+      "execution_count": 26,
+      "outputs": [
+        {
+          "output_type": "error",
+          "ename": "ValueError",
+          "evalue": "Failed to convert a NumPy array to a Tensor (Unsupported object type int).",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mValueError\u001b[0m                                Traceback (most recent call last)",
+            "\u001b[0;32m<ipython-input-26-c3fe42c812cd>\u001b[0m in \u001b[0;36m<cell line: 6>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      4\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      5\u001b[0m \u001b[0;31m# Make predictions\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 6\u001b[0;31m \u001b[0mdummy_predictions\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mmodel\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mpredict\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0msubset_features\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m      7\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      8\u001b[0m \u001b[0;31m# Print the true charges and dummy predictions for comparison\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.10/dist-packages/keras/src/utils/traceback_utils.py\u001b[0m in \u001b[0;36merror_handler\u001b[0;34m(*args, **kwargs)\u001b[0m\n\u001b[1;32m     68\u001b[0m             \u001b[0;31m# To get the full stack trace, call:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     69\u001b[0m             \u001b[0;31m# `tf.debugging.disable_traceback_filtering()`\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m---> 70\u001b[0;31m             \u001b[0;32mraise\u001b[0m \u001b[0me\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mwith_traceback\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mfiltered_tb\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;32mfrom\u001b[0m \u001b[0;32mNone\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m     71\u001b[0m         \u001b[0;32mfinally\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m     72\u001b[0m             \u001b[0;32mdel\u001b[0m \u001b[0mfiltered_tb\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.10/dist-packages/tensorflow/python/framework/constant_op.py\u001b[0m in \u001b[0;36mconvert_to_eager_tensor\u001b[0;34m(value, ctx, dtype)\u001b[0m\n\u001b[1;32m    101\u001b[0m       \u001b[0mdtype\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mdtypes\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mas_dtype\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mdtype\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mas_datatype_enum\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    102\u001b[0m   \u001b[0mctx\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mensure_initialized\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 103\u001b[0;31m   \u001b[0;32mreturn\u001b[0m \u001b[0mops\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mEagerTensor\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mvalue\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mctx\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mdevice_name\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mdtype\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    104\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    105\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;31mValueError\u001b[0m: Failed to convert a NumPy array to a Tensor (Unsupported object type int)."
+          ]
+        }
+      ]
+    }
+  ]
+}
