@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 import json
 
 # Directly integrate the API key in the code
-GOOGLE_API_KEY = "AIzaSyDdUmfIY0u5XoKmSlI1IUkU4zeDGfV74Qw"
+GOOGLE_API_KEY = "AIzaSyDdUmfIY0u5XoKmSiuyiuyopiygyyggkw" #Dummy Api key
 genai.configure(api_key=GOOGLE_API_KEY)
 
 def get_gemini_repsonse(input):
